@@ -1,0 +1,17 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Anecrypt.Avalonia.App"
+             xmlns:local="using:Anecrypt.Avalonia"
+             xmlns:sty="using:FluentAvalonia.Styling"
+             RequestedThemeVariant="Dark">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+
+	<Application.Styles>
+		<sty:FluentAvaloniaTheme PreferUserAccentColor="True" PreferSystemTheme="True" />
+		<StyleInclude Source="avares://FluentAvalonia.ProgressRing/Styling/Controls/ProgressRing.axaml"/>
+	</Application.Styles>
+</Application>

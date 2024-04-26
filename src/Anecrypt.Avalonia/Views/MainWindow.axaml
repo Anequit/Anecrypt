@@ -1,0 +1,139 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Anecrypt.Avalonia.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+				xmlns:ui="using:FluentAvalonia.UI.Controls"
+        xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
+        xmlns:sty="using:FluentAvalonia.Styling"
+				xmlns:input="using:FluentAvalonia.UI.Input"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="210"
+        x:Class="Anecrypt.Avalonia.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+				CanResize="False"
+				SizeToContent="Height"
+        Title="Anecrypt"
+				Height="210"
+				Width="400" 
+				MinWidth="400"
+				MaxWidth="400"
+				Icon="/Assets/lock.ico">
+
+	<Design.DataContext>
+		<!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+		<vm:MainWindowViewModel/>
+	</Design.DataContext>
+
+	<StackPanel Margin="16 8" Spacing="8" VerticalAlignment="Top">
+		<!-- Path to file -->
+		<Grid Grid.Row="0"
+					ColumnDefinitions="*, Auto"
+					Name="FilePathGrid"
+					DragDrop.AllowDrop="True">
+			<TextBox Grid.Column="0"
+							 Watermark="Path to file"
+							 Height="32"
+							 Text="{Binding FilePath}"
+							 ToolTip.Tip="This is where you specify a file you want to operate on"/>
+			<Button Grid.Column="1"
+              Height="32"
+              Margin="8 0 0 0"
+							Command="{Binding SelectFileCommand}"
+							ToolTip.Tip="Select a file to operate on">
+				<StackPanel Spacing="8" Orientation="Horizontal">
+					<ui:SymbolIcon Symbol="OpenFile"
+												 FontSize="16"/>
+
+					<TextBlock Text="Select" />
+				</StackPanel>
+			</Button>
+		</Grid>
+
+		<!-- Password -->
+		<Grid Grid.Row="1"
+					ColumnDefinitions="*, Auto">
+			<TextBox Grid.Column="0"
+							 Watermark="Password"
+							 Height="32"
+							 Classes="clearButton"
+							 Text="{Binding Password}"/>
+
+			<Button Grid.Column="1"
+							Height="32"
+							Width="32"
+							Margin="8 0 0 0"
+							Padding="0"
+							ToolTip.Tip="Generate secure password"
+							Command="{Binding GeneratePasswordCommand}">
+				<ui:SymbolIcon Symbol="Refresh" FontSize="16"/>
+			</Button>
+		</Grid>
+
+		<!-- Options -->
+		<StackPanel>
+			<CheckBox HorizontalAlignment="Stretch"
+								HorizontalContentAlignment="Stretch"
+								FlowDirection="RightToLeft"
+								Margin="8 0 8 0"
+								Padding="8 5 0 5"
+								IsChecked="{Binding IncludeNumbers}"
+								ToolTip.Tip="Includes numbers in randomly generated passwords">
+				<TextBlock HorizontalAlignment="Right"
+									 Text="Include numbers"/>
+			</CheckBox>
+			<CheckBox HorizontalAlignment="Stretch"
+								HorizontalContentAlignment="Stretch"
+								FlowDirection="RightToLeft"
+								Margin="8 0 8 0"
+								Padding="8 5 0 5"
+								IsChecked="{Binding IncludeSymbols}"
+								ToolTip.Tip="Includes symbols in randomly generated passwords">
+				<TextBlock HorizontalAlignment="Right"
+									 Text="Include symbols"/>
+			</CheckBox>
+
+			<CheckBox HorizontalAlignment="Stretch"
+								HorizontalContentAlignment="Stretch"
+								FlowDirection="RightToLeft"
+								Margin="8 0 8 0"
+								Padding="8 5 0 5"
+								IsChecked="{Binding DeleteAfterward}"
+								ToolTip.Tip="Removes the original file when finished">
+				<TextBlock HorizontalAlignment="Right"
+									 Text="Delete original file"/>
+			</CheckBox>
+		</StackPanel>
+		
+		<!-- Encrypy/Decrypt -->
+		<Button Classes="accent"
+						IsVisible="{Binding !Encrypted}"
+						HorizontalAlignment="Stretch"
+						Command="{Binding EncryptCommand}" 
+						Height="32">
+			<Grid>
+				<TextBlock Text="Encrypt" 
+									 IsVisible="{Binding !Busy}"
+									 VerticalAlignment="Center"/>
+				<TextBlock Text="Encrypting..."
+									 IsVisible="{Binding Busy}"
+									 VerticalAlignment="Center"/>
+			</Grid>
+		</Button>
+
+		<Button Classes="accent"
+						IsVisible="{Binding Encrypted}"
+						HorizontalAlignment="Stretch"
+						Command="{Binding DecryptCommand}" 
+						Height="32">
+			<Grid>
+				<TextBlock Text="Decrypt" 
+									 IsVisible="{Binding !Busy}"
+									 VerticalAlignment="Center"/>
+				<TextBlock Text="Decrypting..."
+									 IsVisible="{Binding Busy}"
+									 VerticalAlignment="Center"/>
+			</Grid>
+		</Button>
+	</StackPanel>
+</Window>
