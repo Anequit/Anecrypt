@@ -21,18 +21,17 @@ public static class Encryption
 
         using (FileStream encryptedFile = new FileStream(encryptedFilePath, FileMode.Create))
         {
-            using (FileStream fileStream = new(Path.Combine(rawFilePath), FileMode.Open))
+            using (FileStream fileStream = new FileStream(Path.Combine(rawFilePath), FileMode.Open))
             {
                 using (Aes aes = Aes.Create())
                 {
+                    byte[] salt = Salt();
+
                     // Figure out how to generate key based on user input
-                    byte[] key = Hash(password + " - anecrypt");
+                    aes.Key = Hash(password, salt);
 
-                    aes.Key = key;
-
-                    byte[] iv = aes.IV;
-
-                    encryptedFile.Write(iv, 0, iv.Length);
+                    encryptedFile.Write(aes.IV, 0, aes.IV.Length);
+                    encryptedFile.Write(salt, 0, salt.Length);
 
                     using (CryptoStream cryptoStream = new(encryptedFile, aes.CreateEncryptor(), CryptoStreamMode.Write))
                     {
@@ -64,13 +63,16 @@ public static class Encryption
                 using (Aes aes = Aes.Create())
                 {
                     byte[] iv = new byte[aes.IV.Length];
+                    byte[] salt = new byte[32];
 
-                    int n = encryptedFile.Read(iv, 0, aes.IV.Length);
+                    int ivBytesRead = encryptedFile.Read(iv, 0, aes.IV.Length);
+                    int saltBytesRead = encryptedFile.Read(salt, 0, salt.Length);
 
-                    if (n != aes.IV.Length)
+                    // If IV or salt is not read, then we can't decrypt the file    
+                    if (ivBytesRead != aes.IV.Length || saltBytesRead != salt.Length)
                         return;
 
-                    byte[] key = Hash(password + " - anecrypt");
+                    byte[] key = Hash(password, salt);
 
                     using (CryptoStream cryptoStream = new(fileStream, aes.CreateDecryptor(key, iv), CryptoStreamMode.Write))
                     {
@@ -86,5 +88,17 @@ public static class Encryption
 
     public static bool IsEncrypted(string path) => !string.IsNullOrEmpty(path) && path.EndsWith(".anecrypt");
 
-    private static byte[] Hash(string password) => SHA256.HashData(Encoding.UTF8.GetBytes(password));
+    private static byte[] Hash(string password, byte[] salt) => SHA256.HashData(Encoding.UTF8.GetBytes(password).Concat(salt).ToArray());
+
+    private static byte[] Salt() {
+        // We are using 32 bytes for salt since we are using SHA256
+        byte[] salt = new byte[32];
+
+        using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(salt);
+        }
+
+        return salt;
+    }
 }
