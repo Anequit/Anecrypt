@@ -7,8 +7,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <ApplicationIcon>Assets\lock.ico</ApplicationIcon>
-    <PublishTrimmed>True</PublishTrimmed>
-    <PublishAot>True</PublishAot>
+    <PublishTrimmed>False</PublishTrimmed>
+    <PublishAot>False</PublishAot>
     <AssemblyName>Anecrypt</AssemblyName>
     <Authors>Anequit</Authors>
     <AssemblyVersion>1.1.0</AssemblyVersion>
@@ -24,8 +24,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaXaml Remove="Models\**" />
+    <Compile Remove="Models\**" />
+    <EmbeddedResource Remove="Models\**" />
+    <None Remove="Models\**" />
   </ItemGroup>
 
   <ItemGroup>

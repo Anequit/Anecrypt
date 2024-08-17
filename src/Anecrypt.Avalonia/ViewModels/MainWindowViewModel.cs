@@ -15,7 +15,7 @@ namespace Anecrypt.Avalonia.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private FileService? _fileService;
+    private readonly FileService? _fileService;
 
     [ObservableProperty]
     private string _filePath;

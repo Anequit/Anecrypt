@@ -5,6 +5,9 @@ namespace Anecrypt.Core;
 
 public static class Encryption
 {
+    public const int SaltLength = 32;
+    public const int FileExtensionLength = 3;
+
     /// <summary>
     /// Encrypts a file and stores it in a new location
     /// </summary>
@@ -17,7 +20,7 @@ public static class Encryption
     {
         FileInfo rawFileInfo = new FileInfo(rawFilePath);
 
-        string encryptedFilePath = Path.Combine(saveFolder, rawFileInfo.Name) + ".anecrypt";
+        string encryptedFilePath = Path.Combine(saveFolder, Path.GetFileNameWithoutExtension(rawFileInfo.Name)) + ".anecrypt";
 
         using (FileStream encryptedFile = new FileStream(encryptedFilePath, FileMode.Create))
         {
@@ -32,6 +35,14 @@ public static class Encryption
 
                     encryptedFile.Write(aes.IV, 0, aes.IV.Length);
                     encryptedFile.Write(salt, 0, salt.Length);
+
+                    byte[] fileExtensionLength = GetFileExtensionLengthBytes(rawFileInfo.Name);
+
+                    encryptedFile.Write(fileExtensionLength, 0, fileExtensionLength.Length);
+
+                    byte[] fileExtension = Encoding.ASCII.GetBytes(Path.GetExtension(rawFileInfo.Name));
+
+                    encryptedFile.Write(fileExtension, 0, fileExtension.Length);
 
                     using (CryptoStream cryptoStream = new(encryptedFile, aes.CreateEncryptor(), CryptoStreamMode.Write))
                     {
@@ -54,27 +65,35 @@ public static class Encryption
     /// <param name="cleanupEncryptedFile">Delete encrypted file after decryption</param>
     public static async Task Decrypt(string encryptedFilePath, string saveFolder, string password, bool cleanupEncryptedFile = false)
     {
-        string decryptedFilePath = Path.Combine(saveFolder, new FileInfo(encryptedFilePath).Name);
-
-        using (FileStream encryptedFile = new FileStream(encryptedFilePath, FileMode.Open))
+        using(FileStream encryptedFile = new FileStream(encryptedFilePath, FileMode.Open))
         {
-            using (FileStream fileStream = new FileStream(decryptedFilePath.Remove(decryptedFilePath.IndexOf(".anecrypt")), FileMode.Create))
+            using(Aes aes = Aes.Create())
             {
-                using (Aes aes = Aes.Create())
+                byte[] iv = new byte[aes.IV.Length];
+                byte[] salt = new byte[SaltLength];
+
+                int ivBytesRead = encryptedFile.Read(iv, 0, aes.IV.Length);
+                int saltBytesRead = encryptedFile.Read(salt, 0, salt.Length);
+
+                byte[] fileExtensionLength = new byte[FileExtensionLength];
+
+                encryptedFile.Read(fileExtensionLength, 0, FileExtensionLength);
+
+                byte[] fileExtension = new byte[Convert.ToInt32(Encoding.ASCII.GetString(fileExtensionLength))];
+
+                encryptedFile.Read(fileExtension, 0, fileExtension.Length);
+
+                // If IV or salt is not read, then we can't decrypt the file    
+                if(ivBytesRead != aes.IV.Length || saltBytesRead != salt.Length)
+                    return;
+
+                byte[] key = Hash(password, salt);
+
+                string fileName = Path.Combine(saveFolder, Path.GetFileNameWithoutExtension(encryptedFilePath) + Encoding.ASCII.GetString(fileExtension));
+
+                using(FileStream fileStream = new FileStream(fileName, FileMode.Create))
                 {
-                    byte[] iv = new byte[aes.IV.Length];
-                    byte[] salt = new byte[32];
-
-                    int ivBytesRead = encryptedFile.Read(iv, 0, aes.IV.Length);
-                    int saltBytesRead = encryptedFile.Read(salt, 0, salt.Length);
-
-                    // If IV or salt is not read, then we can't decrypt the file    
-                    if (ivBytesRead != aes.IV.Length || saltBytesRead != salt.Length)
-                        return;
-
-                    byte[] key = Hash(password, salt);
-
-                    using (CryptoStream cryptoStream = new(fileStream, aes.CreateDecryptor(key, iv), CryptoStreamMode.Write))
+                    using(CryptoStream cryptoStream = new(fileStream, aes.CreateDecryptor(key, iv), CryptoStreamMode.Write))
                     {
                         await encryptedFile.CopyToAsync(cryptoStream);
                     }
@@ -90,9 +109,19 @@ public static class Encryption
 
     private static byte[] Hash(string password, byte[] salt) => SHA256.HashData(Encoding.UTF8.GetBytes(password).Concat(salt).ToArray());
 
+    private static byte[] GetFileExtensionLengthBytes(string path)
+    {
+        byte[] padded = new byte[FileExtensionLength];
+
+        byte[] temp = Encoding.ASCII.GetBytes(Path.GetExtension(path).Length.ToString());
+
+        Array.Copy(temp, padded, temp.Length);
+
+        return padded;
+    }
+
     private static byte[] Salt() {
-        // We are using 32 bytes for salt since we are using SHA256
-        byte[] salt = new byte[32];
+        byte[] salt = new byte[SaltLength];
 
         using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
         {
