@@ -120,7 +120,8 @@ public static class Encryption
         return padded;
     }
 
-    private static byte[] Salt() {
+    private static byte[] Salt() 
+    {
         byte[] salt = new byte[SaltLength];
 
         using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
